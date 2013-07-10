@@ -12,11 +12,17 @@
 *.la
 *.a
 
-./Debug/*
-./Release/*
+Debug/*
+Release/*
 
 *.user
 
-./ipch/*
+ipch/*
 
 *.suo
+
+*.csv
+
+.svn
+
+*.txt
