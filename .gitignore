@@ -11,3 +11,12 @@
 *.lai
 *.la
 *.a
+
+./Debug/*
+./Release/*
+
+*.user
+
+./ipch/*
+
+*.suo
