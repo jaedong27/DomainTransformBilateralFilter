@@ -4,15 +4,18 @@
 
 using namespace cv;
 
+enum{NORMALIZED_CONVOLUTION, INTERPOLATED_CONVOLUTION, RECURSIVE_FILTERING};
+enum{NONE, OPEN_MP};
+
 class DomainTransformBilateralFilter
 {
 public:
+	
+	Mat image_;
+	
 	DomainTransformBilateralFilter(void);
 	DomainTransformBilateralFilter(Mat input_image);
 	~DomainTransformBilateralFilter(void);
-
-	Mat original_image_;
-	Mat output_image_;
 
 	bool Init();
 	bool Init(Mat input_image);
@@ -20,7 +23,7 @@ public:
 	bool ApplyNC(double sigma_s, double sigma_r, int iteration_number, bool open_mp_flag);
 	bool ApplyIC(double sigma_s, double sigma_r, int iteration_number, bool open_mp_flag);
 	bool ApplyRF(double sigma_s, double sigma_r, int iteration_number, bool open_mp_flag);
-	
+	bool Apply(int filter_type, bool open_mp_flag, double sigma_s, double sigma_r, int iteration_number);
 	Mat Transpose(Mat input_image);
 
 private:
@@ -31,6 +34,7 @@ private:
 	bool DebugCTFileOut();
 	bool DebugdHdxFileOut();
 	bool CalculateCTFunction();
+
 	Mat IterationNCFunction(Mat input_image, double *ctH, double r);
 	Mat IterationNCFunctionOpenMP(Mat input_image, double *ctH, double r);
 	Mat IterationICFunction(Mat input_image, double *ctH, double r); 

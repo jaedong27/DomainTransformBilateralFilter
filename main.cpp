@@ -53,57 +53,40 @@ int wmain(int argc, _TCHAR* argv[])
 	
 	//NC
 	int64 pretime = getTickCount();
-	for(int i = 0; i < 5 ; i++)
-	{
-		NC_filter->ApplyNC(60, 0.4, 3, false);
-	}
-	printf("Non NC : %lf\n", (getTickCount() - pretime) / 5 / getTickFrequency());
+	NC_filter->Apply(NORMALIZED_CONVOLUTION, NONE, 60, 0.4, 3);
+	printf("Non NC : %lf\n", (getTickCount() - pretime) / getTickFrequency());
 	
 	//NC OpenMP
 	pretime = getTickCount();
-	for(int i = 0; i < 5 ; i++)
-	{
-		NCMP_filter->ApplyNC(60, 0.4, 3, true);
-	}
-	printf("MP  NC : %lf\n", (getTickCount() - pretime) / 5 / getTickFrequency());
+	NCMP_filter->Apply(NORMALIZED_CONVOLUTION, OPEN_MP, 60, 0.4, 3);
+	printf("MP  NC : %lf\n", (getTickCount() - pretime) / getTickFrequency());
 
 	// IC
 	pretime = getTickCount();
-	for(int i = 0; i < 5 ; i++)
-	{
-		IC_filter->ApplyIC(60, 0.4, 3, false);
-	}
-	printf("Non IC : %f\n", (getTickCount() - pretime) / 5 / getTickFrequency());
+	IC_filter->Apply(INTERPOLATED_CONVOLUTION, NONE, 60, 0.4, 3);
+	printf("Non IC : %f\n", (getTickCount() - pretime) / getTickFrequency());
 
 	// IC OpenMP
 	pretime = getTickCount();
-	for(int i = 0; i < 5 ; i++)
-	{
-		ICMP_filter->ApplyIC(60, 0.4, 3, true);
-	}
-	printf("MP  IC : %f\n", (getTickCount() - pretime) / 5 / getTickFrequency());
+	ICMP_filter->Apply(INTERPOLATED_CONVOLUTION, OPEN_MP, 60, 0.4, 3);
+	printf("MP  IC : %f\n", (getTickCount() - pretime) / getTickFrequency());
+	
 	// RF
 	pretime = getTickCount();
-	for(int i = 0; i < 1 ; i++)
-	{
-		RF_filter->ApplyRF(60, 0.4, 3, false);
-	}
+	RF_filter->Apply(RECURSIVE_FILTERING, NONE, 60, 0.4, 3);
 	printf("Non RF : %f\n", (getTickCount() - pretime) / getTickFrequency());
 
 	// RF OpenMP
 	pretime = getTickCount();
-	for(int i = 0; i < 1 ; i++)
-	{
-		RFMP_filter->ApplyRF(60, 0.4, 3, true);
-	}
+	RFMP_filter->Apply(RECURSIVE_FILTERING, OPEN_MP, 60, 0.4, 3);
 	printf("MP  RF : %f\n", (getTickCount() - pretime) / getTickFrequency());
 	
-	imshow("1. Normalized Convolution", NC_filter->output_image_);
-	imshow("1. Normalized Convolution(MP)", NCMP_filter->output_image_);
-	imshow("2. Normalized Convolution", IC_filter->output_image_);
-	imshow("2. Normalized Convolution(MP)", ICMP_filter->output_image_);
-	imshow("3. Recursive Filtering", RF_filter->output_image_);
-	imshow("3. Recursive Filtering(MP)", RFMP_filter->output_image_);
+	imshow("1. Normalized Convolution", NC_filter->image_);
+	imshow("1. Normalized Convolution(MP)", NCMP_filter->image_);
+	imshow("2. Normalized Convolution", IC_filter->image_);
+	imshow("2. Normalized Convolution(MP)", ICMP_filter->image_);
+	imshow("3. Recursive Filtering", RF_filter->image_);
+	imshow("3. Recursive Filtering(MP)", RFMP_filter->image_);
 	
 	cvWaitKey(0);
 	return 0;

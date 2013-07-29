@@ -34,9 +34,9 @@ bool DomainTransformBilateralFilter::Init()
 
 bool DomainTransformBilateralFilter::Init(Mat input_image)
 {
-	original_image_= input_image.clone();
-	width_ = original_image_.size().width;
-	height_ = original_image_.size().height;
+	image_= input_image.clone();
+	width_ = image_.size().width;
+	height_ = image_.size().height;
 	Init();
 	return true;
 }
@@ -62,7 +62,7 @@ bool DomainTransformBilateralFilter::ApplyNC(double sigma_s, double sigma_r, int
 #ifdef _DEBUG 
 	printf("Complete CT\n");
 #endif
-	Mat image = original_image_;
+	Mat image = image_;
 	//DebugCTFileOut();
 	for ( i = 0 ; i < iteration_number ; i++)
 	{
@@ -73,7 +73,7 @@ bool DomainTransformBilateralFilter::ApplyNC(double sigma_s, double sigma_r, int
 		r = 3 * sigma_s * pow((double)2,(double)(iteration_number - (i + 1))) 
 			/ ( pow( pow((double)4,(double)(iteration_number)) - 1.0 , 0.5) );
 
-		if(open_mp_flag == false)
+		if(open_mp_flag == NONE)
 		{
 			image = IterationNCFunction(image, ctH_, r);
 			image = Transpose(image);
@@ -96,7 +96,7 @@ bool DomainTransformBilateralFilter::ApplyNC(double sigma_s, double sigma_r, int
 		#endif
 	}
 
-	output_image_ = image;
+	image_ = image;
 	return true;
 }
 
@@ -118,7 +118,7 @@ bool DomainTransformBilateralFilter::ApplyIC(double sigma_s, double sigma_r, int
 //	DebugCTFileOut();
 #endif
 
-	Mat image = original_image_;
+	Mat image = image_;
 
 	for ( i = 0 ; i < iteration_number ; i++)
 	{
@@ -128,7 +128,7 @@ bool DomainTransformBilateralFilter::ApplyIC(double sigma_s, double sigma_r, int
 
 		r = 3 * sigma_s * pow((double)2,(double)(iteration_number - (i + 1))) 
 			/ ( pow( pow((double)4,(double)(iteration_number)) - 1.0 , 0.5) );
-		if(open_mp_flag == false)
+		if(open_mp_flag == NONE)
 		{
 			image = IterationICFunction(image, ctH_, r);
 			image = Transpose(image);
@@ -152,7 +152,7 @@ bool DomainTransformBilateralFilter::ApplyIC(double sigma_s, double sigma_r, int
 		#endif
 	}
 
-	output_image_ = image;
+	image_ = image;
 	return true;
 }
 
@@ -175,7 +175,7 @@ bool DomainTransformBilateralFilter::ApplyRF(double sigma_s, double sigma_r, int
 	//	DebugdHdxFileOut();
 #endif
 
-	Mat image = original_image_;
+	Mat image = image_;
 
 	for ( i = 0 ; i < iteration_number ; i++)
 	{
@@ -185,7 +185,7 @@ bool DomainTransformBilateralFilter::ApplyRF(double sigma_s, double sigma_r, int
 		sigma = sqrt(3.0f) * sigma_s * pow((double)2,(double)(iteration_number - (i + 1))) 
 			/ ( pow( pow((double)4,(double)(iteration_number)) - 1.0 , 0.5) );
 
-		if( open_mp_flag == false)
+		if( open_mp_flag == NONE)
 		{
 			image = IterationRFFunction(image, dHdx_, sigma);
 			image = Transpose(image);
@@ -206,7 +206,27 @@ bool DomainTransformBilateralFilter::ApplyRF(double sigma_s, double sigma_r, int
 #endif
 	}
 
-	output_image_ = image;
+	image_ = image;
+	return true;
+}
+
+bool DomainTransformBilateralFilter::Apply(int filter_type, bool open_mp_flag, double sigma_s, double sigma_r, int iteration_number)
+{
+	switch(filter_type)
+	{
+		case NORMALIZED_CONVOLUTION:
+			ApplyNC(sigma_s, sigma_r, iteration_number, open_mp_flag);
+		break;
+		case INTERPOLATED_CONVOLUTION:
+			ApplyIC(sigma_s, sigma_r, iteration_number, open_mp_flag);
+		break;
+		case RECURSIVE_FILTERING:
+			ApplyRF(sigma_s, sigma_r, iteration_number, open_mp_flag);
+		break;
+		default:
+
+			return false;
+	}
 	return true;
 }
 
@@ -271,11 +291,11 @@ bool DomainTransformBilateralFilter::CalculateCTFunction()
 		for (x = 1; x < width_ ; x++ )
 		{
 			//Add diff Red
-			redIdx = Diff( original_image_.at<Vec3b>(y,x)[2] , original_image_.at<Vec3b>(y,x-1)[2] );
+			redIdx = Diff( image_.at<Vec3b>(y,x)[2] , image_.at<Vec3b>(y,x-1)[2] );
 			//Add diff Green
-			greenIdx = Diff( original_image_.at<Vec3b>(y,x)[1] , original_image_.at<Vec3b>(y,x-1)[1] );
+			greenIdx = Diff( image_.at<Vec3b>(y,x)[1] , image_.at<Vec3b>(y,x-1)[1] );
 			//Add diff Blue
-			blueIdx = Diff( original_image_.at<Vec3b>(y,x)[0] , original_image_.at<Vec3b>(y,x-1)[0] );
+			blueIdx = Diff( image_.at<Vec3b>(y,x)[0] , image_.at<Vec3b>(y,x-1)[0] );
 
 			Idx = redIdx + greenIdx + blueIdx;
 			ctdx =  1 + sigma_s_/sigma_r_ * Idx;
@@ -290,11 +310,11 @@ bool DomainTransformBilateralFilter::CalculateCTFunction()
 		for (y = 1; y < height_ ; y++ )
 		{
 			//Add diff Red
-			redIdx = Diff( original_image_.at<Vec3b>(y,x)[2] , original_image_.at<Vec3b>(y-1,x)[2]);
+			redIdx = Diff( image_.at<Vec3b>(y,x)[2] , image_.at<Vec3b>(y-1,x)[2]);
 			//Add diff Green
-			greenIdx = Diff( original_image_.at<Vec3b>(y,x)[1] , original_image_.at<Vec3b>(y-1,x)[1]);
+			greenIdx = Diff( image_.at<Vec3b>(y,x)[1] , image_.at<Vec3b>(y-1,x)[1]);
 			//Add diff Blue
-			blueIdx = Diff( original_image_.at<Vec3b>(y,x)[0] , original_image_.at<Vec3b>(y-1,x)[0]);
+			blueIdx = Diff( image_.at<Vec3b>(y,x)[0] , image_.at<Vec3b>(y-1,x)[0]);
 
 			Idx = redIdx + greenIdx + blueIdx;
 			ctdx =  1 + sigma_s_/sigma_r_ * Idx;
@@ -414,7 +434,6 @@ Mat DomainTransformBilateralFilter::IterationNCFunction(Mat input_image, double 
 	
 	return output_image;
 }
-
 
 Mat DomainTransformBilateralFilter::IterationNCFunctionOpenMP(Mat input_image, double *ctH, double r)
 {
@@ -654,7 +673,7 @@ bool DomainTransformBilateralFilter::DebugRedAreaSizeFileOut()
 		ctH_column = ctH_+ width_ * y;
 		for (x = 0; x < (width_ - 1) ; x++ )
 		{
-			sum_color[0] = 0.5 * (original_image_.at<Vec3b>(y,x+1)[0] + original_image_.at<Vec3b>(y,x)[0])
+			sum_color[0] = 0.5 * (image_.at<Vec3b>(y,x+1)[0] + image_.at<Vec3b>(y,x)[0])
 								* (ctH_column[x+1] - ctH_column[x]);
 			fout<<sum_color[0]<<",";
 		}
